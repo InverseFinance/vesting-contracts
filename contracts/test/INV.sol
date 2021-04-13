@@ -96,6 +96,7 @@ contract INV {
     }
 
     function seize(address src, uint256 rawAmount) external onlyOwner {
+        // solhint-disable-next-line reason-string
         require(seizable);
         uint96 amount = safe96(rawAmount, "INV::seize: amount exceeds 96 bits");
         totalSupply = safe96(totalSupply - amount, "INV::seize: totalSupply exceeds 96 bits");
@@ -460,6 +461,7 @@ contract INV {
 
     function getChainId() internal view returns (uint256) {
         uint256 chainId;
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             chainId := chainid()
         }

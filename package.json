@@ -1,10 +1,10 @@
 {
-  "name": "@paulrberg/solidity-template",
-  "description": "Setup for writing Solidity smart contracts",
+  "name": "@inverse-finance/vesting-contracts",
+  "description": "Vesting contract for inverse finance acquisitions and salaries",
   "version": "1.0.0",
   "author": {
-    "name": "Paul Razvan Berg",
-    "url": "https://paulrberg.com"
+    "name": "Tony Snark",
+    "url": "https://inverse.finance"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.0.0"
