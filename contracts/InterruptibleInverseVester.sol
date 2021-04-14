@@ -1,20 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
-import "./InverseVester.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IInv, InverseVester } from "./InverseVester.sol";
 
 /**
  * @title Interruptible inverse token vesting contract
  * @author Inverse Finance
- * @notice Vesting contract which can be interrupted by governance
+ * @notice Vesting contract which can be interrupted by timelock
  */
 contract InterruptibleInverseVester is InverseVester {
-    address public governance;
+    using SafeERC20 for IInv;
+
+    address public timelock;
 
     /**
-     * @dev Prevents non governance from calling a method
+     * @dev Prevents non timelock from calling a method
      */
-    modifier onlyGovernance() {
-        require(msg.sender == governance, "InterruptibleInverseVester:ACCESS_DENIED");
+    modifier onlyTimelock() {
+        require(msg.sender == timelock, "InterruptibleInverseVester:ACCESS_DENIED");
         _;
     }
 
@@ -23,9 +26,9 @@ contract InterruptibleInverseVester is InverseVester {
         uint256 _vestingAmount,
         uint16 _vestingDurationInDays,
         bool _reverseVesting,
-        address _governance
+        address _timelock
     ) InverseVester(_inv, _vestingAmount, _vestingDurationInDays, _reverseVesting) {
-        governance = _governance;
+        timelock = _timelock;
     }
 
     /**
@@ -33,9 +36,18 @@ contract InterruptibleInverseVester is InverseVester {
      *         all unvested tokens to the address provided
      * @param collectionAccount Where to send unvested tokens
      */
-    function interrupt(address collectionAccount) public onlyGovernance {
+    function interrupt(address collectionAccount) external onlyTimelock {
         require(collectionAccount != address(0), "InterruptibleInverseVester:INVALID_ADDRESS");
-        inv.transfer(collectionAccount, unvested());
+        inv.safeTransfer(collectionAccount, unvested());
         vestingEnd = block.timestamp;
+    }
+
+    /**
+     * @notice Replace timelock
+     * @param newTimelock New timelock address
+     */
+    function setTimelock(address newTimelock) external onlyTimelock {
+        require(newTimelock != address(0), "InterruptibleInverseVester:INVALID_ADDRESS");
+        timelock = newTimelock;
     }
 }

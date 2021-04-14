@@ -17,9 +17,6 @@ contract InverseVester is Ownable {
 
     uint256 public constant DAY = 1 days;
 
-    // @dev Total amount to be vested
-    uint256 public vestingAmount;
-
     // @dev Timestamp for the start of this vesting agreement
     uint256 public vestingBegin;
 
@@ -29,14 +26,17 @@ contract InverseVester is Ownable {
     // @dev Timestamp for the last time vested tokens were claimed
     uint256 public lastClaimTimestamp;
 
+    // @dev Total amount to be vested
+    uint256 public immutable vestingAmount;
+
     // @dev Inverse finance treasury token
-    IInv public inv;
+    IInv public immutable inv;
 
     // @dev Amount of days the vesting period will last
-    uint16 public vestingDurationInDays;
+    uint16 public immutable vestingDurationInDays;
 
     // @dev Whether this is a reverse vesting agreement
-    bool public reverseVesting;
+    bool public immutable reverseVesting;
 
     constructor(
         IInv _inv,

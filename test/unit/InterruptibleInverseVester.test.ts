@@ -212,8 +212,14 @@ describe("Interruptible Inverse Vester", function () {
       await expect(contractAsUser.delegate(userWallet.address)).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
-    it("Forbids non governance to interrupt", async function () {
+    it("Forbids non timelock to interrupt", async function () {
       await expect(contractAsUser.interrupt(userWallet.address)).to.be.revertedWith(
+        "InterruptibleInverseVester:ACCESS_DENIED",
+      );
+    });
+
+    it("Forbids non timelock to set timelock", async function () {
+      await expect(contractAsUser.setTimelock(userWallet.address)).to.be.revertedWith(
         "InterruptibleInverseVester:ACCESS_DENIED",
       );
     });
