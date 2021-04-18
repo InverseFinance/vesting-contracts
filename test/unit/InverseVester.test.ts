@@ -225,7 +225,7 @@ describe("Inverse Vester", function () {
       ])) as InverseVester;
       const contractAsTimelock = contract.connect(timelockWallet);
       await invAsTimelock.approve(contract.address, amount);
-      await contractAsTimelock.interrupt(delegateWallet.address);
+      await expect(contractAsTimelock.interrupt(delegateWallet.address)).to.emit(contract, "VestingInterrupted");
       // Before activating there should be no balance in the contract
       expect(await inv.balanceOf(delegateWallet.address)).to.be.eq(0);
       expect(await contract.vestingEnd()).to.be.equal(0);
@@ -246,7 +246,7 @@ describe("Inverse Vester", function () {
       const contractAsTimelock = contract.connect(timelockWallet);
       await invAsTimelock.approve(contract.address, amount);
       await contractAsUser.activate();
-      await contractAsTimelock.interrupt(delegateWallet.address);
+      await expect(contractAsTimelock.interrupt(delegateWallet.address)).to.emit(contract, "VestingInterrupted");
       const now = await getCurrentTimeStamp();
       // Give some tolerance for timestamp drift
       expect(amount.sub(await inv.balanceOf(delegateWallet.address))).to.be.lt(INV(0.0001));

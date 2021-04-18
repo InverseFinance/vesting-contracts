@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IInv, InverseVester } from "./InverseVester.sol";
 
@@ -10,7 +11,9 @@ import { IInv, InverseVester } from "./InverseVester.sol";
  * @notice Factory contract to create configurable vesting agreement
  */
 contract InverseVesterFactory is Ownable {
-    /// @dev Emitted when vesting starts
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    /// @dev Emitted when vesting is created
     event VestingCreated(address recipient, address inverseVester, uint256 amount, uint16 vestingDuration);
 
     /// @dev Inverse finance governance timelock
@@ -19,8 +22,8 @@ contract InverseVesterFactory is Ownable {
     address public immutable inv;
     /// @dev Registry of vesting agreements by recipient
     mapping(address => InverseVester[]) public inverseVestersByRecipient;
-    /// @dev Registry of all vesting agreements
-    InverseVester[] public allInverseVesters;
+    /// @dev Registry of all recipients
+    EnumerableSet.AddressSet private _allRecipients;
 
     constructor(address inv_, address timelock_) {
         require(inv_ != address(0) && timelock_ != address(0), "InverseVesterFactory:INVALID_ADDRESS");
@@ -45,7 +48,6 @@ contract InverseVesterFactory is Ownable {
         bool reverseVesting,
         bool interruptible
     ) public onlyOwner {
-        require(recipient != address(0), "InverseVesterFactory:INVALID_ADDRESS");
         InverseVester inverseVester =
             new InverseVester(
                 inv,
@@ -59,7 +61,7 @@ contract InverseVesterFactory is Ownable {
             );
 
         inverseVestersByRecipient[recipient].push(inverseVester);
-        allInverseVesters.push(inverseVester);
+        _allRecipients.add(recipient);
 
         emit VestingCreated(recipient, address(inverseVester), vestingAmount, vestingDurationInDays);
     }
@@ -78,7 +80,7 @@ contract InverseVesterFactory is Ownable {
         uint16 vestingDurationInDays,
         uint16 vestingStartDelayInDays,
         bool reverseVesting
-    ) public {
+    ) external {
         newInverseVester(
             recipient,
             vestingAmount,
@@ -103,7 +105,7 @@ contract InverseVesterFactory is Ownable {
         uint16 vestingDurationInDays,
         uint16 vestingStartDelayInDays,
         bool reverseVesting
-    ) public {
+    ) external {
         newInverseVester(
             recipient,
             vestingAmount,
@@ -126,16 +128,21 @@ contract InverseVesterFactory is Ownable {
         uint256 vestingAmount,
         uint16 vestingDurationInDays,
         uint16 vestingStartDelayInDays
-    ) public {
+    ) external {
         newInverseVester(recipient, vestingAmount, vestingDurationInDays, vestingStartDelayInDays, false, true);
     }
 
     /**
-     * @notice Returns all vesting agreements
-     * @return all vesting agreements
+     * @notice Returns all recipients of a vesting aggrement
+     * @return recipients all recipients
      */
-    function getAllInverseVesters() public view returns (InverseVester[] memory) {
-        return allInverseVesters;
+    function getAllRecipients() external view returns (address[] memory recipients) {
+        uint256 length = _allRecipients.length();
+        recipients = new address[](length);
+        for (uint256 i = 0; i < length; i++) {
+            recipients[i] = _allRecipients.at(i);
+        }
+        return recipients;
     }
 
     /**
@@ -143,7 +150,7 @@ contract InverseVesterFactory is Ownable {
      * @param recipient Recipient of the vesting agreements
      * @return all vesting agreements for recipient
      */
-    function getInverseVestersByRecipient(address recipient) public view returns (InverseVester[] memory) {
+    function getInverseVestersByRecipient(address recipient) external view returns (InverseVester[] memory) {
         return inverseVestersByRecipient[recipient];
     }
 }

@@ -44,8 +44,7 @@ describe("Inverse Vester Factory", function () {
           interruptible,
         ),
       ).to.emit(contract, "VestingCreated");
-      expect((await contract.getAllInverseVesters()).length).to.be.equal(1);
-      const vestingContractAddress = await contract.allInverseVesters(0);
+      const vestingContractAddress = await contract.inverseVestersByRecipient(userWallet0.address, 0);
       const vestingContract: InverseVester = await deployedContract("InverseVester", vestingContractAddress);
       expect(await vestingContract.reverseVesting()).to.be.equal(reverseVesting);
       expect(await vestingContract.interruptible()).to.be.equal(interruptible);
@@ -98,8 +97,7 @@ describe("Inverse Vester Factory", function () {
           reverseVesting,
         ),
       ).to.emit(contract, "VestingCreated");
-      expect((await contract.getAllInverseVesters()).length).to.be.equal(1);
-      const vestingContractAddress = await contract.allInverseVesters(0);
+      const vestingContractAddress = await contract.inverseVestersByRecipient(userWallet0.address, 0);
       const vestingContract: InverseVester = await deployedContract("InverseVester", vestingContractAddress);
       expect(await vestingContract.reverseVesting()).to.be.equal(reverseVesting);
       expect(await vestingContract.interruptible()).to.be.equal(false);
@@ -123,8 +121,7 @@ describe("Inverse Vester Factory", function () {
           reverseVesting,
         ),
       ).to.emit(contract, "VestingCreated");
-      expect((await contract.getAllInverseVesters()).length).to.be.equal(1);
-      const vestingContractAddress = await contract.allInverseVesters(0);
+      const vestingContractAddress = await contract.inverseVestersByRecipient(userWallet0.address, 0);
       const vestingContract: InverseVester = await deployedContract("InverseVester", vestingContractAddress);
       expect(await vestingContract.reverseVesting()).to.be.equal(reverseVesting);
       expect(await vestingContract.interruptible()).to.be.equal(true);
@@ -141,8 +138,7 @@ describe("Inverse Vester Factory", function () {
       await expect(
         contract.newSalaryAgreement(userWallet0.address, amount, durationInDays, vestingStartDelayInDays),
       ).to.emit(contract, "VestingCreated");
-      expect((await contract.getAllInverseVesters()).length).to.be.equal(1);
-      const vestingContractAddress = await contract.allInverseVesters(0);
+      const vestingContractAddress = await contract.inverseVestersByRecipient(userWallet0.address, 0);
       const vestingContract: InverseVester = await deployedContract("InverseVester", vestingContractAddress);
       expect(await vestingContract.reverseVesting()).to.be.equal(false);
       expect(await vestingContract.interruptible()).to.be.equal(true);
@@ -162,7 +158,7 @@ describe("Inverse Vester Factory", function () {
       await contract.newInverseVester(userWallet1.address, 300, 300, 0, true, false);
       await contract.newInverseVester(userWallet1.address, 400, 400, 0, true, false);
       await contract.newInverseVester(userWallet1.address, 500, 500, 0, true, false);
-      expect((await contract.getAllInverseVesters()).length).to.be.equal(5);
+      expect((await contract.getAllRecipients()).length).to.be.equal(2);
       expect((await contract.getInverseVestersByRecipient(userWallet0.address)).length).to.be.equal(2);
       expect((await contract.getInverseVestersByRecipient(userWallet1.address)).length).to.be.equal(3);
     });

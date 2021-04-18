@@ -13,6 +13,9 @@ import "./interfaces/IInv.sol";
 contract InverseVester is Ownable {
     using SafeERC20 for IInv;
 
+    /// @dev Emitted when vesting is interrupted
+    event VestingInterrupted(address recipient, uint256 vestingBegin, uint256 vestingAmount);
+
     uint256 public constant DAY = 1 days;
 
     /// @dev Timestamp for the start of this vesting agreement
@@ -68,6 +71,7 @@ contract InverseVester is Ownable {
             inv_ != address(0) && timelock_ != address(0) && recipient != address(0),
             "InverseVester:INVALID_ADDRESS"
         );
+        require(vestingAmount_ > 0, "InverseVester:INVALID_AMOUNT");
         inv = IInv(inv_);
         vestingAmount = vestingAmount_;
         vestingDurationInDays = vestingDurationInDays_;
@@ -148,6 +152,7 @@ contract InverseVester is Ownable {
         if (vestingEnd != 0) {
             vestingEnd = block.timestamp;
         }
+        emit VestingInterrupted(owner(), vestingBegin, vestingAmount);
     }
 
     /**
