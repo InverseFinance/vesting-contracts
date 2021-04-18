@@ -7,9 +7,7 @@ import "./interfaces/IInv.sol";
 /**
  * @title Inverse token vesting contract
  * @author Inverse Finance
- * @notice Base contract for vesting agreement on INV tokens
- *         Reverse vesting means tokens are owned but the recipient
- *         and can be used for voting.
+ * @notice Contract for vesting agreement on INV tokens
  * @dev    Vesting calculation is linear
  */
 contract InverseVester is Ownable {
@@ -17,68 +15,93 @@ contract InverseVester is Ownable {
 
     uint256 public constant DAY = 1 days;
 
-    // @dev Timestamp for the start of this vesting agreement
+    /// @dev Timestamp for the start of this vesting agreement
     uint256 public vestingBegin;
 
-    // @dev Timestamp for the end of this vesting agreement
+    /// @dev Timestamp for the end of this vesting agreement
     uint256 public vestingEnd;
 
-    // @dev Timestamp for the last time vested tokens were claimed
+    /// @dev Timestamp for the last time vested tokens were claimed
     uint256 public lastClaimTimestamp;
 
-    // @dev Total amount to be vested
+    /// @dev Total amount to be vested
     uint256 public immutable vestingAmount;
 
-    // @dev Inverse finance treasury token
-    IInv public immutable inv;
+    /// @dev By how long the vesting should be delayed after activating this contract
+    ///      This can be used for multi year vesting agreements
+    uint16 public immutable vestingStartDelayInDays;
 
-    // @dev Amount of days the vesting period will last
+    /// @dev Inverse finance governance timelock contract
+    address public timelock;
+
+    /// @dev Amount of days the vesting period will last
     uint16 public immutable vestingDurationInDays;
 
-    // @dev Whether this is a reverse vesting agreement
+    /// @dev Whether this is a reverse vesting agreement
     bool public immutable reverseVesting;
 
+    /// @dev Whether this is vesting agreement can be interrupted
+    bool public immutable interruptible;
+
+    /// @dev Inverse finance treasury token
+    IInv public immutable inv;
+
+    /**
+     * @dev Prevents non timelock from calling a method
+     */
+    modifier onlyTimelock() {
+        require(msg.sender == timelock, "InverseVester:ACCESS_DENIED");
+        _;
+    }
+
     constructor(
-        IInv _inv,
-        uint256 _vestingAmount,
-        uint16 _vestingDurationInDays,
-        bool _reverseVesting
+        address inv_,
+        address timelock_,
+        uint256 vestingAmount_,
+        uint16 vestingDurationInDays_,
+        uint16 vestingStartDelayInDays_,
+        bool reverseVesting_,
+        bool interruptible_,
+        address recipient
     ) {
-        inv = _inv;
-        vestingAmount = _vestingAmount;
-        vestingDurationInDays = _vestingDurationInDays;
-        reverseVesting = _reverseVesting;
+        require(
+            inv_ != address(0) && timelock_ != address(0) && recipient != address(0),
+            "InverseVester:INVALID_ADDRESS"
+        );
+        inv = IInv(inv_);
+        vestingAmount = vestingAmount_;
+        vestingDurationInDays = vestingDurationInDays_;
+        reverseVesting = reverseVesting_;
+        timelock = timelock_;
+        vestingStartDelayInDays = vestingStartDelayInDays_;
+        interruptible = interruptible_;
+        transferOwnership(recipient);
     }
 
     /**
-     * @notice Starts vesting period
-     * @dev Transfers contract ownership
-     * @param recipient recipient of the vested tokens (new owner)
-     * @param treasury source of tokens
+     * @notice Activates contract
      */
-    function start(address recipient, address treasury) public onlyOwner {
-        require(vestingBegin == 0, "InverseVester:ALREADY_STARTED");
-        require(recipient != address(0) && treasury != address(0), "InverseVester:INVALID_ADDRESS");
-        inv.safeTransferFrom(treasury, address(this), vestingAmount);
+    function activate() public onlyOwner {
+        require(vestingBegin == 0, "InverseVester:ALREADY_ACTIVE");
+        inv.safeTransferFrom(timelock, address(this), vestingAmount);
         if (reverseVesting) {
-            inv.delegate(recipient);
+            inv.delegate(owner());
         } else {
-            inv.delegate(treasury);
+            inv.delegate(timelock);
         }
-        vestingBegin = lastClaimTimestamp = block.timestamp;
+        vestingBegin = lastClaimTimestamp = block.timestamp + (vestingStartDelayInDays * DAY);
         vestingEnd = vestingBegin + (vestingDurationInDays * DAY);
-        transferOwnership(recipient);
     }
 
     /**
      * @notice Delegates all votes owned by this contract
      * @dev Only available in reverse vesting
-     * @param _delegate recipient of the votes
+     * @param delegate_ recipient of the votes
      */
-    function delegate(address _delegate) public onlyOwner {
+    function delegate(address delegate_) public onlyOwner {
         // If this is non reverse vesting, tokens votes stay with treasury
         require(reverseVesting, "InverseVester:DELEGATION_NOT_ALLOWED");
-        inv.delegate(_delegate);
+        inv.delegate(delegate_);
     }
 
     /**
@@ -110,5 +133,29 @@ contract InverseVester is Ownable {
         uint256 amount = claimable();
         lastClaimTimestamp = block.timestamp;
         inv.safeTransfer(owner(), amount);
+    }
+
+    /**
+     * @notice Interrupts this vesting agreement and returns
+     *         all unvested tokens to the address provided
+     * @param collectionAccount Where to send unvested tokens
+     */
+    function interrupt(address collectionAccount) external onlyTimelock {
+        require(interruptible, "InverseVester:CANNOT_INTERRUPT");
+        require(collectionAccount != address(0), "InverseVester:INVALID_ADDRESS");
+        inv.safeTransfer(collectionAccount, unvested());
+        // if interrupted after activation we terminate vesting now
+        if (vestingEnd != 0) {
+            vestingEnd = block.timestamp;
+        }
+    }
+
+    /**
+     * @notice Replace timelock
+     * @param newTimelock New timelock address
+     */
+    function setTimelock(address newTimelock) external onlyTimelock {
+        require(newTimelock != address(0), "InverseVester:INVALID_ADDRESS");
+        timelock = newTimelock;
     }
 }

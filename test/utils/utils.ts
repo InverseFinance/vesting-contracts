@@ -16,6 +16,7 @@ export async function advanceBlockBySeconds(secondsToAdd: number): Promise<void>
   const newTimestamp = (await getCurrentTimeStamp()) + secondsToAdd;
   await ethers.provider.send("evm_mine", [newTimestamp]);
 }
+
 export async function deployedContract<T extends Contract>(contractName: string, address: string): Promise<T> {
   return (await hre.ethers.getContractAt(contractName, address)) as T;
 }
