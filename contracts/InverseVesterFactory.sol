@@ -29,6 +29,7 @@ contract InverseVesterFactory is Ownable {
         require(inv_ != address(0) && timelock_ != address(0), "InverseVesterFactory:INVALID_ADDRESS");
         inv = inv_;
         timelock = timelock_;
+        transferOwnership(timelock_);
     }
 
     /**
@@ -152,5 +153,15 @@ contract InverseVesterFactory is Ownable {
      */
     function getInverseVestersByRecipient(address recipient) external view returns (InverseVester[] memory) {
         return inverseVestersByRecipient[recipient];
+    }
+
+    /**
+     * @notice Replace timelock
+     * @param newTimelock New timelock address
+     */
+    function setTimelock(address newTimelock) external onlyOwner {
+        require(newTimelock != address(0), "InverseVesterFactory:INVALID_ADDRESS");
+        timelock = newTimelock;
+        transferOwnership(newTimelock);
     }
 }

@@ -25,6 +25,8 @@ describe("Inverse Vester Factory", function () {
       inv.address,
       timelockWallet.address,
     ])) as InverseVesterFactory;
+    // Timelock becomes owner after instantiation
+    contract = contract.connect(timelockWallet);
     contractAsUser = contract.connect(userWallet0);
   });
 
@@ -188,6 +190,18 @@ describe("Inverse Vester Factory", function () {
       await expect(
         contractAsUser.newSalaryAgreement(userWallet0.address, amount, durationInDays, 10),
       ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("allows timelock to set timelock", async function () {
+      await contract.setTimelock(userWallet0.address);
+      expect(await contract.owner()).to.be.equal(userWallet0.address);
+      expect(await contract.timelock()).to.be.equal(userWallet0.address);
+    });
+
+    it("forbids non timelock to set timelock", async function () {
+      await expect(contractAsUser.setTimelock(userWallet0.address)).to.be.revertedWith(
+        "Ownable: caller is not the owner",
+      );
     });
   });
 });
