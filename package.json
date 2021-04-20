@@ -1,12 +1,14 @@
 {
-  "name": "@paulrberg/solidity-template",
-  "description": "Setup for writing Solidity smart contracts",
+  "name": "@inverse-finance/vesting-contracts",
+  "description": "Vesting contract for inverse finance acquisitions and salaries",
   "version": "1.0.0",
   "author": {
-    "name": "Paul Razvan Berg",
-    "url": "https://paulrberg.com"
+    "name": "Tony Snark",
+    "url": "https://inverse.finance"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.0.0"
+  },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^9.1.2",
