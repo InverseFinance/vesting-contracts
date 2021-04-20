@@ -1,5 +1,6 @@
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
+import "@nomiclabs/hardhat-etherscan";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 
@@ -32,15 +33,22 @@ if (!process.env.MNEMONIC) {
   mnemonic = process.env.MNEMONIC;
 }
 
-let infuraApiKey: string;
-if (!process.env.INFURA_API_KEY) {
-  throw new Error("Please set your INFURA_API_KEY in a .env file");
+let alchemyToken: string;
+if (!process.env.ALCHEMY_TOKEN) {
+  throw new Error("Please set your ALCHEMY_TOKEN in a .env file");
 } else {
-  infuraApiKey = process.env.INFURA_API_KEY;
+  alchemyToken = process.env.ALCHEMY_TOKEN;
 }
 
-function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig {
-  const url: string = "https://" + network + ".infura.io/v3/" + infuraApiKey;
+let etherscanApiKey: string;
+if (!process.env.ETHERSCAN_API_KEY) {
+  throw new Error("Please set your ETHERSCAN_API_KEY in a .env file");
+} else {
+  etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+}
+
+function createConfig(network: keyof typeof chainIds): NetworkUserConfig {
+  const url = `https://eth-${network}.alchemyapi.io/v2/${alchemyToken}`;
   return {
     accounts: {
       count: 10,
@@ -68,10 +76,14 @@ const config: HardhatUserConfig = {
       },
       chainId: chainIds.hardhat,
     },
-    goerli: createTestnetConfig("goerli"),
-    kovan: createTestnetConfig("kovan"),
-    rinkeby: createTestnetConfig("rinkeby"),
-    ropsten: createTestnetConfig("ropsten"),
+    goerli: createConfig("goerli"),
+    kovan: createConfig("kovan"),
+    rinkeby: createConfig("rinkeby"),
+    ropsten: createConfig("ropsten"),
+    mainnet: createConfig("mainnet"),
+  },
+  etherscan: {
+    apiKey: etherscanApiKey,
   },
   paths: {
     artifacts: "./artifacts",

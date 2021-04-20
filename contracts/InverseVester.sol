@@ -87,7 +87,6 @@ contract InverseVester is Ownable {
      */
     function activate() public onlyOwner {
         require(vestingBegin == 0, "InverseVester:ALREADY_ACTIVE");
-        inv.safeTransferFrom(timelock, address(this), vestingAmount);
         if (reverseVesting) {
             inv.delegate(owner());
         } else {
@@ -113,7 +112,9 @@ contract InverseVester is Ownable {
      * @return amount Tokens ready to be claimed
      */
     function claimable() public view returns (uint256 amount) {
-        if (block.timestamp >= vestingEnd) {
+        if (!active()) {
+            amount = 0;
+        } else if (block.timestamp >= vestingEnd) {
             amount = inv.balanceOf(address(this));
         } else {
             // Claim linearly starting from when claimed lastly
@@ -126,14 +127,15 @@ contract InverseVester is Ownable {
      * @return amount Tokens still to be vested
      */
     function unvested() public view returns (uint256 amount) {
-        amount = inv.balanceOf(address(this)) - claimable();
+        uint256 balance = inv.balanceOf(address(this));
+        amount = active() ? balance - claimable() : balance;
     }
 
     /**
      * @notice Send claimable tokens to contract's owner
      */
     function claim() public {
-        require(vestingBegin != 0 && vestingBegin <= block.timestamp, "InverseVester:NOT_STARTED");
+        require(active() && vestingBegin <= block.timestamp, "InverseVester:NOT_STARTED");
         uint256 amount = claimable();
         lastClaimTimestamp = block.timestamp;
         inv.safeTransfer(owner(), amount);
@@ -145,7 +147,7 @@ contract InverseVester is Ownable {
      * @param collectionAccount Where to send unvested tokens
      */
     function interrupt(address collectionAccount) external onlyTimelock {
-        require(interruptible, "InverseVester:CANNOT_INTERRUPT");
+        require(interruptible || !active(), "InverseVester:CANNOT_INTERRUPT");
         require(collectionAccount != address(0), "InverseVester:INVALID_ADDRESS");
         inv.safeTransfer(collectionAccount, unvested());
         // if interrupted after activation we terminate vesting now
@@ -153,6 +155,14 @@ contract InverseVester is Ownable {
             vestingEnd = block.timestamp;
         }
         emit VestingInterrupted(owner(), vestingBegin, vestingAmount);
+    }
+
+    /**
+     * @notice Whether this contract has been activated
+     * @return True if active
+     */
+    function active() public view returns (bool) {
+        return vestingBegin != 0;
     }
 
     /**

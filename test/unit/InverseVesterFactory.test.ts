@@ -1,16 +1,16 @@
 import { expect } from "chai";
-import { Contract } from "ethers";
 import { waffle } from "hardhat";
 import InverseVesterFactoryABI from "../../artifacts/contracts/InverseVesterFactory.sol/InverseVesterFactory.json";
 import InvABI from "../../artifacts/contracts/test/INV.sol/INV.json";
-import { InverseVester, InverseVesterFactory } from "../../typechain";
+import { INV as InvToken, InverseVester, InverseVesterFactory } from "../../typechain";
 import { INV } from "../../utils/utils";
 import { deployedContract } from "../utils/utils";
 
 describe("Inverse Vester Factory", function () {
   const amount = INV(1000);
   const durationInDays = 365;
-  let inv: Contract;
+  let inv: InvToken;
+  let invAsTimelock: InvToken;
 
   let contract: InverseVesterFactory;
   let contractAsUser: InverseVesterFactory;
@@ -20,7 +20,9 @@ describe("Inverse Vester Factory", function () {
   const { deployContract } = waffle;
 
   beforeEach(async () => {
-    inv = await deployContract(deployerWallet, InvABI, [deployerWallet.address]);
+    inv = (await deployContract(deployerWallet, InvABI, [deployerWallet.address])) as InvToken;
+    invAsTimelock = inv.connect(timelockWallet);
+    await inv.openTheGates();
     contract = (await deployContract(deployerWallet, InverseVesterFactoryABI, [
       inv.address,
       timelockWallet.address,
@@ -28,6 +30,9 @@ describe("Inverse Vester Factory", function () {
     // Timelock becomes owner after instantiation
     contract = contract.connect(timelockWallet);
     contractAsUser = contract.connect(userWallet0);
+    //Simulate timelock
+    await inv.mint(timelockWallet.address, amount);
+    await invAsTimelock.approve(contract.address, amount);
   });
 
   describe("Initialisation", function () {

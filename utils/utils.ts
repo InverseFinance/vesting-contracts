@@ -31,3 +31,7 @@ export function ETH(val: string | number): BigNumber {
 export function INV(val: string | number): BigNumber {
   return utils.parseEther(val.toString());
 }
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
