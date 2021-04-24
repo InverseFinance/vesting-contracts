@@ -246,7 +246,7 @@ describe("Inverse Vester", function () {
       expect(await contract.vestingEnd()).to.be.equal(now);
     });
 
-    it("cannot interrups non interruptible active contract", async function () {
+    it("cannot interrupt non interruptible active contract", async function () {
       contract = (await deployContract(deployerWallet, InverseVesterABI, [
         inv.address,
         timelockWallet.address,

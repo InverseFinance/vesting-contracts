@@ -30,7 +30,7 @@ describe("Inverse Vester Factory", function () {
     // Timelock becomes owner after instantiation
     contract = contract.connect(timelockWallet);
     contractAsUser = contract.connect(userWallet0);
-    //Simulate timelock
+    // Simulate timelock
     await inv.mint(timelockWallet.address, amount);
     await invAsTimelock.approve(contract.address, amount);
   });

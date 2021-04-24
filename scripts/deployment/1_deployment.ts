@@ -11,7 +11,7 @@ async function main(): Promise<void> {
     `Deployment Started. networkId = ${networkId} timelock = ${addresses.timelock} INV = ${addresses.invToken}`,
   );
 
-  await deploySingletonContract(hre, true, true, "InverseVesterFactory", [addresses?.invToken, addresses?.timelock]);
+  await deploySingletonContract(hre, true, true, "InverseVesterFactory", [addresses.invToken, addresses.timelock]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
