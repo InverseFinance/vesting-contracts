@@ -11,6 +11,7 @@ import { IInv, InverseVester } from "./InverseVester.sol";
  * @notice Factory contract to create configurable vesting agreement
  */
 contract InverseVesterFactory is Ownable {
+    using SafeERC20 for IInv;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /// @dev Emitted when vesting is created
@@ -60,6 +61,8 @@ contract InverseVesterFactory is Ownable {
                 interruptible,
                 recipient
             );
+
+        IInv(inv).safeTransferFrom(timelock, address(inverseVester), vestingAmount);
 
         inverseVestersByRecipient[recipient].push(inverseVester);
         _allRecipients.add(recipient);

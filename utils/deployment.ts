@@ -2,6 +2,7 @@ import { Contract, ContractFactory } from "@ethersproject/contracts";
 import { ethers } from "ethers";
 import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { sleep } from "./utils";
 const HISTORY_DIR = "deployment/history";
 function persistAddress(hre: HardhatRuntimeEnvironment, label: string, address: string) {
   const fileName = `deployment/constants-${hre.network.name}.json`;
@@ -33,15 +34,17 @@ export function deployedAddress(hre: HardhatRuntimeEnvironment, label: string): 
 export async function deploySingletonContract<T extends Contract>(
   hre: HardhatRuntimeEnvironment,
   force: boolean,
+  verify: boolean,
   contractName: string,
   args: Array<unknown> = [],
 ): Promise<T> {
-  return deployContractInstance(hre, force, contractName, contractName, args);
+  return deployContractInstance(hre, force, verify, contractName, contractName, args);
 }
 
 export async function deployContractInstance<T extends Contract>(
   hre: HardhatRuntimeEnvironment,
   force: boolean,
+  verify: boolean,
   contractName: string,
   instanceName: string,
   args: Array<unknown> = [],
@@ -53,6 +56,14 @@ export async function deployContractInstance<T extends Contract>(
     await contract.deployed();
     console.log(`${contractName}: ${contract.address}`);
     persistAddress(hre, contractInstanceName(contractName, instanceName), contract.address);
+    if (verify) {
+      console.log("Starting contract verification. Waiting 30s.");
+      await sleep(30000);
+      await hre.run("verify:verify", {
+        address: contract.address,
+        constructorArguments: args,
+      });
+    }
     return contract as T;
   } else {
     return deployedContract<T>(hre, contractName, instanceName);
